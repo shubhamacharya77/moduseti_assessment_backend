@@ -50,7 +50,7 @@ backend/
   - `StrategicResponse`: Schema `{ strategic_issues: list[str], evidence: list[str], business_impact: str, recommendation: str, priority: str, expected_outcome: str }`
 
 ### Sub-Phase 1.5: FastAPI Application & Health Route
-- File: `backend/api/main.py`:
+- File: `main.py`:
   - Initialize FastAPI app instance.
   - Enable CORS middleware for frontend communication.
   - Expose `/api/health` endpoint returning `{"status": "healthy", "service": "MODUS AI Platform"}`.
@@ -58,7 +58,7 @@ backend/
 ---
 
 ## 🔍 Verification Criteria
-1. `backend/requirements.txt` installs cleanly.
+1. `requirements.txt` installs cleanly.
 2. Database client modules load without errors.
-3. `uvicorn backend.api.main:app` starts without errors.
+3. `uvicorn main:app` starts without errors.
 4. Calling `GET http://localhost:8000/api/health` returns HTTP 200 `{"status": "healthy"}`.

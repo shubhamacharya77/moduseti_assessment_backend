@@ -7,13 +7,14 @@ The platform uses a **Layered Service Architecture** with strict isolation betwe
 
 ## 1. Layer Responsibilities
 
-- **`backend/api/`**: Only HTTP routes and request/response validation.
-- **`backend/services/`**: Business logic, data transformations, PDF chunking, and Pandas calculations.
-- **`backend/tools/`**: Fact retrieval (Chroma vector search, Pandas SQL queries, Research benchmarks).
-- **`backend/agents/`**: LLM reasoning engine (Groq) and Supervisor graph (LangGraph).
-- **`backend/database/`**: Database persistence (PostgreSQL engine, Chroma client, Supabase client).
-- **`backend/models/`**: Pydantic schemas and SQLAlchemy ORM models.
-- **`backend/prompts/`**: System prompt templates.
+- **`main.py`**: Central FastAPI application entrypoint, CORS configuration, and top-level middleware.
+- **`api/`**: HTTP route handlers and request/response validation modules.
+- **`services/`**: Business logic, data transformations, PDF chunking, and Pandas calculations.
+- **`tools/`**: Fact retrieval (Chroma vector search, Pandas SQL queries, Research benchmarks).
+- **`agents/`**: LLM reasoning engine (Groq) and Supervisor graph (LangGraph).
+- **`database/`**: Database persistence (PostgreSQL engine, Chroma client, Supabase client).
+- **`models/`**: Pydantic schemas and SQLAlchemy ORM models.
+- **`prompts/`**: System prompt templates.
 
 ---
 

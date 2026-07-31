@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(
     title="AI Transformation Strategy Intelligence Platform API",
@@ -17,6 +18,18 @@ app.add_middleware(
 )
 
 
+@app.get("/", include_in_schema=False)
+async def root_to_docs() -> RedirectResponse:
+    """Redirect root endpoint to Swagger UI documentation."""
+    return RedirectResponse(url="/docs")
+
+
+
+from api.upload import router as upload_router
+
+app.include_router(upload_router, prefix="/api/upload", tags=["Document Upload"])
+
+
 @app.get("/api/health")
 async def health_check() -> dict[str, str]:
     """Health check endpoint to verify backend service readiness."""
@@ -25,3 +38,4 @@ async def health_check() -> dict[str, str]:
         "service": "MODUS Enterprise AI Platform",
         "version": "1.0.0",
     }
+
