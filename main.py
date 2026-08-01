@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from api.chat import router as chat_router
 from api.dashboard import router as dashboard_router
 from api.upload import router as upload_router
 
@@ -28,6 +29,7 @@ async def root_to_docs() -> RedirectResponse:
 
 app.include_router(upload_router, prefix="/api/upload", tags=["Document Upload"])
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Strategic Dashboard"])
+app.include_router(chat_router, prefix="/api/chat", tags=["Grounded Executive Chat"])
 
 
 @app.get("/api/health")
