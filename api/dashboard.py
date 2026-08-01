@@ -1,7 +1,9 @@
 from typing import Any, Optional
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from agents import SupervisorAgent
+from database.chroma import get_collection_stats
+from tools import CustomerAnalyticsTool, SalesAnalyticsTool
 
 router = APIRouter()
 
@@ -37,4 +39,72 @@ async def generate_dashboard_strategy(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate strategic dashboard response: {str(e)}"
+        )
+
+
+@router.get("/metrics", status_code=status.HTTP_200_OK)
+async def get_dashboard_metrics() -> dict[str, Any]:
+    """Retrieves aggregated executive KPIs, sales performance summary, customer churn health, and document RAG collection stats."""
+    try:
+        sales_tool = SalesAnalyticsTool()
+        customer_tool = CustomerAnalyticsTool()
+
+        sales_items = sales_tool.get_summary_metrics()
+        customer_items = customer_tool.get_summary_metrics()
+
+        sales_details = sales_items[0].details if sales_items else {}
+        customer_details = customer_items[0].details if customer_items else {}
+
+        chroma_stats = get_collection_stats()
+
+        return {
+            "status": "success",
+            "message": "Executive dashboard metrics retrieved successfully.",
+            "metrics": {
+                "sales_summary": sales_details,
+                "customer_summary": customer_details,
+                "document_vector_store": chroma_stats,
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve dashboard metrics: {str(e)}"
+        )
+
+
+@router.get("/sales-slice", status_code=status.HTTP_200_OK)
+async def get_sales_slice(
+    category: Optional[str] = Query(default=None, description="Filter by product category"),
+    region: Optional[str] = Query(default=None, description="Filter by geographic region"),
+    product: Optional[str] = Query(default=None, description="Filter by specific product name"),
+    segment: Optional[str] = Query(default=None, description="Filter by customer segment")
+) -> dict[str, Any]:
+    """Runs on-the-fly dynamic slice aggregation over sales records based on filter criteria."""
+    try:
+        sales_tool = SalesAnalyticsTool()
+        slice_items = sales_tool.query_slice(
+            category=category,
+            region=region,
+            product=product,
+            segment=segment
+        )
+
+        slice_details = slice_items[0].details if slice_items else {}
+
+        return {
+            "status": "success",
+            "message": "Sales analytics slice computed successfully.",
+            "filters_applied": {
+                "category": category,
+                "region": region,
+                "product": product,
+                "segment": segment,
+            },
+            "slice_data": slice_details
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to query sales slice: {str(e)}"
         )

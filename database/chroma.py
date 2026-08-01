@@ -114,3 +114,21 @@ def search_chunks(
         matches.append(match_item)
 
     return matches
+
+
+def get_collection_stats(collection_name: str = "enterprise_documents") -> dict[str, Any]:
+    """Returns vector collection total count and status stats."""
+    try:
+        collection = get_or_create_collection(collection_name=collection_name)
+        count = collection.count()
+        return {
+            "collection_name": collection_name,
+            "total_chunks_stored": count,
+            "status": "ready" if count > 0 else "empty"
+        }
+    except Exception as e:
+        return {
+            "collection_name": collection_name,
+            "total_chunks_stored": 0,
+            "status": f"error: {str(e)}"
+        }
