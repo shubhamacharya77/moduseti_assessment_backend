@@ -15,12 +15,12 @@ backend/
  ├── agents/        # LangGraph supervisor & Groq strategy engine
  │    ├── supervisor/
  │    └── strategy/
- ├── tools/         # Independent fact-retrieval tools
- │    ├── knowledge/
- │    ├── sales/
- │    ├── customer/
- │    ├── research/
- │    └── evidence/
+ ├── tools/         # Independent fact-retrieval tools (flat modules)
+ │    ├── knowledge_tool.py
+ │    ├── sales_tool.py
+ │    ├── customer_tool.py
+ │    ├── research_tool.py
+ │    └── evidence_collector.py
  ├── services/      # Ingestion & data processing services
  ├── database/      # PostgreSQL, Chroma, Supabase client modules
  ├── models/        # Pydantic schemas & ORM models

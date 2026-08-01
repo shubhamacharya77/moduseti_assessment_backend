@@ -30,7 +30,7 @@ Build a quantitative Pandas analytics pipeline for Customer CSV datasets. The pi
   - Persists processed customer data and summary metrics into PostgreSQL.
 
 ### Sub-Phase 4.4: Customer Analytics Tool Implementation
-- File: `backend/tools/customer/customer_tool.py`
+- File: `backend/tools/customer_tool.py`
 - Class `CustomerAnalyticsTool(BaseTool)`:
   - Input: Analytical query or metric request (e.g. `"churn_analysis"`, `"customer_health"`).
   - Action: Queries PostgreSQL customer summary tables / executes Pandas aggregations.

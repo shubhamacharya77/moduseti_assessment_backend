@@ -20,7 +20,7 @@ Build an automated document processing pipeline that accepts Company Profile PDF
 - Upsert embeddings, text chunks, and metadata into Chroma DB.
 
 ### Sub-Phase 2.3: Knowledge Tool Implementation
-- File: `backend/tools/knowledge/knowledge_tool.py`
+- File: `backend/tools/knowledge_tool.py`
 - Class `KnowledgeTool(BaseTool)`:
   - Input: Query string or target topic.
   - Action: Performs similarity vector search against Chroma DB collection (`enterprise_documents`).

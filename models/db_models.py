@@ -42,6 +42,41 @@ class SalesAnalyticsSummary(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class CustomerRecord(SQLModel, table=True):
+    """SQLModel ORM model representing customer dataset records."""
+
+    __tablename__ = "customer_records"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    batch_id: str = Field(index=True)
+    customer_id: str = Field(index=True)
+    customer_name: str
+    customer_segment: str
+    region: str
+    city: str
+    join_date: Optional[datetime] = None
+    customer_status: str
+    loyalty_tier: str
+    customer_rating: float
+    churn_risk: str
+    preferred_payment_method: str
+    total_orders: float
+    total_spend: float
+    average_order_value: float
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CustomerAnalyticsSummary(SQLModel, table=True):
+    """SQLModel ORM model representing pre-computed quantitative customer summary metrics."""
+
+    __tablename__ = "customer_analytics_summary"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    batch_id: str = Field(index=True)
+    metrics: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 def init_db() -> None:
     """Initializes database tables using SQLModel metadata."""
     SQLModel.metadata.create_all(engine)

@@ -8,7 +8,7 @@ Build a centralized `EvidenceCollector` tool that aggregates raw evidence items 
 ## 🛠️ Sub-Phases & Deliverables
 
 ### Sub-Phase 6.1: Evidence Collector Engine Implementation
-- File: `backend/tools/evidence/evidence_collector.py`
+- File: `backend/tools/evidence_collector.py`
 - Class `EvidenceCollector`:
   - Responsibility: Gather multi-source evidence outputs and assemble the final payload for LLM strategy reasoning.
   - Core Method: `collect_and_package(tool_outputs: list[list[EvidenceItem]], user_question: str) -> EvidencePackage`

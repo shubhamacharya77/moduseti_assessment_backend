@@ -29,7 +29,7 @@ Build a quantitative Pandas analytics pipeline for Sales CSV datasets. The pipel
   - Write validated data to PostgreSQL via SQLAlchemy session.
 
 ### Sub-Phase 3.4: Sales Analytics Tool Implementation
-- File: `backend/tools/sales/sales_tool.py`
+- File: `backend/tools/sales_tool.py`
 - Class `SalesAnalyticsTool(BaseTool)`:
   - Input: Analytical query or metric request (e.g. `"revenue_trends"`, `"product_performance"`).
   - Action: Queries PostgreSQL summary tables / runs Pandas aggregations over stored sales data.

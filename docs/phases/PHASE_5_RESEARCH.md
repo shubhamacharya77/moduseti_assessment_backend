@@ -14,7 +14,7 @@ Build an independent `ResearchTool` that retrieves industry benchmarks, market t
   - Integrates external web search/API wrapper if live search credentials are provided, or curated domain-specific benchmark dataset.
 
 ### Sub-Phase 5.2: Research Tool Implementation
-- File: `backend/tools/research/research_tool.py`
+- File: `backend/tools/research_tool.py`
 - Class `ResearchTool(BaseTool)`:
   - Input: Query string or industry category (e.g., `"SaaS sales compensation benchmarks"`).
   - Action: Queries research benchmark engine for matching market data and strategic best practices.
