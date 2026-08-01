@@ -17,7 +17,7 @@ Build the core LLM strategic reasoning engine using the Groq API and a LangGraph
   - *"Output must strictly conform to the StrategicResponse JSON schema."*
 
 ### Sub-Phase 7.2: Strategy Engine Implementation
-- File: `backend/agents/strategy/strategy_engine.py`
+- File: `backend/agents/strategy_engine.py`
 - Class `StrategicIntelligenceEngine`:
   - Uses `Groq` LLM client (`llama-3.3-70b-versatile` / fast reasoning model).
   - Input: `EvidencePackage` + Executive Question / Intent.
@@ -33,7 +33,7 @@ Build the core LLM strategic reasoning engine using the Groq API and a LangGraph
     ```
 
 ### Sub-Phase 7.3: LangGraph Supervisor Graph Orchestration
-- File: `backend/agents/supervisor/supervisor.py`
+- File: `backend/agents/supervisor_agent.py`
 - Class `SupervisorAgent`:
   - Implements a LangGraph `StateGraph`:
     1. **Intent Node**: Parses executive prompt/request.
