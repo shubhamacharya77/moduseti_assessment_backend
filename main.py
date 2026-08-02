@@ -1,14 +1,25 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from api.chat import router as chat_router
 from api.dashboard import router as dashboard_router
 from api.upload import router as upload_router
+from models.db_models import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="AI Transformation Strategy Intelligence Platform API",
     description="Enterprise backend providing evidence-backed AI transformation strategy for C-suite leaders.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS for Next.js frontend communication

@@ -24,21 +24,21 @@ class StrategyEngine:
 
         return StrategicResponse(
             strategic_issues=[
-                "High Customer Churn Rate (26.0%) exceeding industry benchmark target (< 5.0%).",
-                "Sub-optimal Profit Margin alignment across sales channels and customer segments."
+                "Customer Churn Rate is High (26.0%), which is far above the healthy target of under 5.0%.",
+                "Profit Margins vary widely across product categories and customer segments."
             ],
             evidence=citation_list if citation_list else ["Evidence Package Ingestion"],
             business_impact=(
-                "Elevated customer churn threatens long-term Net Revenue Retention (NRR) and increases "
-                "customer acquisition pressure on sales teams."
+                "Losing customers too quickly hurts recurring monthly revenue and forces sales teams "
+                "to spend extra effort replacing lost clients."
             ),
             recommendation=(
-                "Phase 1: Implement targeted customer success intervention for high-churn risk customer segments. "
-                "Phase 2: Realign sales incentives to prioritize high-margin product categories. "
-                "Phase 3: Deploy automated onboarding workflows to elevate CSAT ratings above 4.2."
+                "Step 1: Reach out immediately to high-risk customers with personalized support and retention offers. "
+                "Step 2: Focus sales reps on promoting high-margin, top-performing product lines. "
+                "Step 3: Streamline customer onboarding to improve satisfaction scores above 4.2 out of 5.0."
             ),
-            priority="High (Immediate Quick-Win)",
-            expected_outcome="Projected 8-12% churn reduction within 90 days and 15% increase in gross profit margin."
+            priority="High (Immediate Action Required)",
+            expected_outcome="Goal: Reduce customer churn by 8-12% within 90 days and increase profit margins by 15%."
         )
 
     def generate_strategy(self, evidence_package: EvidencePackage) -> StrategicResponse:

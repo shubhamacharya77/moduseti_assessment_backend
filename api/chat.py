@@ -19,7 +19,7 @@ class ChatQueryRequest(BaseModel):
 async def ask_executive_chat(
     payload: ChatQueryRequest
 ) -> dict[str, Any]:
-    """Processes executive chat queries through the Supervisor agent, returning evidence-grounded responses with citations."""
+    """Processes executive chat queries through the Supervisor agent, returning evidence-grounded responses with citations & dynamic chart data."""
     query_text = payload.message.strip()
     if not query_text:
         raise HTTPException(
@@ -33,6 +33,7 @@ async def ask_executive_chat(
 
         evidence_pkg = result.get("evidence_package", {})
         strat_resp = result.get("strategic_response", {})
+        chart_data = result.get("chart_data")
 
         return {
             "status": "success",
@@ -44,6 +45,7 @@ async def ask_executive_chat(
             "priority": strat_resp.get("priority", "Medium"),
             "expected_outcome": strat_resp.get("expected_outcome", ""),
             "evidence_citations": evidence_pkg.get("items", []),
+            "chart_data": chart_data,
         }
     except Exception as e:
         raise HTTPException(
