@@ -1,4 +1,6 @@
 from typing import Any
+from agents.intent_classifier import IntentClassifier
+from agents.execution_planner import ExecutionPlanner, ExecutionPlan
 from agents.strategy_engine import StrategyEngine
 from models.evidence import EvidenceItem, EvidencePackage
 from models.strategy import StrategicResponse
@@ -12,9 +14,11 @@ from tools import (
 
 
 class SupervisorAgent:
-    """Stateful Supervisor agent coordinating intent routing, tool execution, evidence collection, and strategic reasoning."""
+    """Stateful Supervisor agent orchestrating Intent Classification, Execution Planning, Capability Branch Dispatch, Result Aggregation, and Executive Strategy Generation."""
 
     def __init__(self):
+        self.intent_classifier = IntentClassifier()
+        self.execution_planner = ExecutionPlanner()
         self.knowledge_tool = KnowledgeTool()
         self.sales_tool = SalesAnalyticsTool()
         self.customer_tool = CustomerAnalyticsTool()
@@ -104,45 +108,63 @@ class SupervisorAgent:
         return None
 
     def route_and_execute(self, user_question: str) -> dict[str, Any]:
-        """Routes execution across tools, packages evidence, and generates strategic recommendations."""
+        """Orchestrates Intent Classification -> Execution Planning -> Targeted Capability Branching -> Result Aggregation -> Executive Strategy Generation."""
+        # 1. Intent Classifier
+        intent = self.intent_classifier.classify(user_question)
+
+        # 2. Execution Planner
+        plan: ExecutionPlan = self.execution_planner.plan(intent=intent, question=user_question)
+
         tool_outputs: list[list[EvidenceItem]] = []
+        sales_details: dict[str, Any] = {}
+        customer_details: dict[str, Any] = {}
 
-        # 1. Intent routing & tool dispatch
-        sales_items = self.sales_tool.get_summary_metrics()
-        tool_outputs.append(sales_items)
+        # 3. Dynamic Tool Capability Branch Dispatch
+        if plan.need_sales:
+            sales_items = self.sales_tool.get_summary_metrics()
+            if sales_items:
+                tool_outputs.append(sales_items)
+                sales_details = sales_items[0].details if isinstance(sales_items[0].details, dict) else {}
 
-        cust_items = self.customer_tool.get_summary_metrics()
-        tool_outputs.append(cust_items)
+        if plan.need_customer:
+            cust_items = self.customer_tool.get_summary_metrics()
+            if cust_items:
+                tool_outputs.append(cust_items)
+                customer_details = cust_items[0].details if isinstance(cust_items[0].details, dict) else {}
 
-        benchmarks = self.research_tool.query(query_text=user_question)
-        tool_outputs.append(benchmarks)
+        if plan.need_knowledge:
+            rag_items = self.knowledge_tool.query(query_text=user_question, n_results=3)
+            if rag_items:
+                tool_outputs.append(rag_items)
 
-        rag_items = self.knowledge_tool.query(query_text=user_question, n_results=3)
-        if rag_items:
-            tool_outputs.append(rag_items)
+        if plan.need_research:
+            benchmarks = self.research_tool.query(query_text=user_question)
+            if benchmarks:
+                tool_outputs.append(benchmarks)
 
-        # Extract details for chart data generation
-        sales_details = sales_items[0].details if sales_items else {}
-        customer_details = cust_items[0].details if cust_items else {}
+        # Generate chart data only if planned
+        chart_data = None
+        if plan.generate_chart:
+            chart_data = self._extract_chart_data(
+                user_question=user_question,
+                sales_details=sales_details,
+                customer_details=customer_details,
+            )
 
-        chart_data = self._extract_chart_data(
-            user_question=user_question,
-            sales_details=sales_details,
-            customer_details=customer_details,
-        )
-
-        # 2. Package evidence via EvidenceCollector
+        # 4. Result Aggregator (EvidenceCollector)
         evidence_package: EvidencePackage = self.evidence_collector.collect_and_package(
             tool_outputs=tool_outputs, user_question=user_question
         )
 
-        # 3. Generate strategic response via StrategyEngine
+        # 5. Executive Summary Generator (StrategyEngine)
         strategic_response: StrategicResponse = self.strategy_engine.generate_strategy(
             evidence_package
         )
 
         return {
             "question": user_question,
+            "intent": plan.intent,
+            "execution_plan": plan.model_dump(),
             "evidence_package": evidence_package.model_dump(),
             "strategic_response": strategic_response.model_dump(),
             "chart_data": chart_data,
