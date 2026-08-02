@@ -17,8 +17,21 @@ class StrategyEngine:
         self.model_name = model_name
         self.api_key = api_key or os.getenv("GROQ_API_KEY", "")
 
+    def _generate_empty_data_response(self) -> StrategicResponse:
+        """Returns clean empty workspace response when no user data or documents exist."""
+        return StrategicResponse(
+            strategic_issues=[
+                "No company sales, customer, or document data found in the workspace."
+            ],
+            evidence=["No Data Uploaded"],
+            business_impact="No data available to calculate churn rate, revenue metrics, or business performance.",
+            recommendation="Please upload your Sales CSV, Customer CSV, or corporate PDF documents using the dropzone above to generate strategic recommendations.",
+            priority="Notice",
+            expected_outcome="Upload operational data to generate automated AI strategy insights."
+        )
+
     def _generate_data_driven_response(self, evidence_package: EvidencePackage) -> StrategicResponse:
-        """Purely data-grounded strategy response generator operating exclusively on ingested metrics without hardcoded assumptions."""
+        """Purely data-grounded strategy response generator operating exclusively on ingested metrics."""
         q = (evidence_package.question or "").lower()
         items = evidence_package.items
         citation_list = [f"{item.source}: {item.title}" for item in items]
@@ -40,16 +53,7 @@ class StrategyEngine:
 
         # 1. Empty Workspace Case (Zero Data & Zero Documents)
         if total_rev == 0 and total_cust == 0 and not doc_chunks:
-            return StrategicResponse(
-                strategic_issues=[
-                    "No operational data, sales transactions, customer records, or company documents have been uploaded to the platform yet."
-                ],
-                evidence=citation_list if citation_list else ["Workspace Ingestion Required"],
-                business_impact="Strategic recommendations require ingested business metrics or corporate PDF documentation to execute evidence-grounded evaluation.",
-                recommendation="Please upload your Sales CSV, Customer CSV, or corporate PDF documents using the dropzone above. Once files are ingested, the platform will compute live metrics and generate your Strategic Intelligence Playbook.",
-                priority="Notice (Data Ingestion Required)",
-                expected_outcome="Ingest enterprise operational data to unlock automated evidence-grounded recommendations."
-            )
+            return self._generate_empty_data_response()
 
         # 2. PDF Document RAG Match Case
         if doc_chunks and (total_rev == 0 and total_cust == 0):
@@ -110,6 +114,27 @@ class StrategyEngine:
 
     def generate_strategy(self, evidence_package: EvidencePackage) -> StrategicResponse:
         """Generates evidence-grounded strategic transformation response from EvidencePackage."""
+        items = evidence_package.items
+        sales_details = {}
+        cust_details = {}
+        doc_chunks = []
+
+        for item in items:
+            if item.source == "Sales Analytics Tool" and isinstance(item.details, dict):
+                sales_details = item.details
+            elif item.source == "Customer Analytics Tool" and isinstance(item.details, dict):
+                cust_details = item.details
+            elif isinstance(item.details, dict) and "text_chunk" in item.details:
+                doc_chunks.append(item.details.get("text_chunk", ""))
+
+        total_rev = sales_details.get("total_revenue", 0)
+        total_cust = cust_details.get("total_customers", 0)
+
+        # CRITICAL MANDATORY CHECK: If user has 0 sales, 0 customers, and 0 uploaded documents,
+        # DO NOT call LLM or research benchmarks. Return clean empty workspace response!
+        if total_rev == 0 and total_cust == 0 and not doc_chunks:
+            return self._generate_empty_data_response()
+
         if not self.api_key or "your_" in self.api_key.lower():
             return self._generate_data_driven_response(evidence_package)
 
