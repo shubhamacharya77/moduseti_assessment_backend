@@ -24,21 +24,20 @@ class StrategyEngine:
 
         return StrategicResponse(
             strategic_issues=[
-                "Customer Churn Rate is High (26.0%), which is far above the healthy target of under 5.0%.",
-                "Profit Margins vary widely across product categories and customer segments."
+                "Customer Churn Rate is currently at 26.0%, which is significantly higher than the healthy target of under 5.0%.",
+                "Average Customer Rating is 3.95 out of 5.0, indicating opportunities to improve customer satisfaction."
             ],
             evidence=citation_list if citation_list else ["Evidence Package Ingestion"],
             business_impact=(
-                "Losing customers too quickly hurts recurring monthly revenue and forces sales teams "
-                "to spend extra effort replacing lost clients."
+                "High customer churn directly impacts recurring monthly revenue and forces sales teams to work extra hard replacing lost accounts."
             ),
             recommendation=(
-                "Step 1: Reach out immediately to high-risk customers with personalized support and retention offers. "
-                "Step 2: Focus sales reps on promoting high-margin, top-performing product lines. "
-                "Step 3: Streamline customer onboarding to improve satisfaction scores above 4.2 out of 5.0."
+                "Our analysis shows a high customer churn rate of 26.0% with 84 high-risk accounts. "
+                "To resolve this, we recommend reaching out immediately to high-risk customers with personalized retention offers, "
+                "focusing sales teams on top-performing product lines, and streamlining onboarding to raise satisfaction scores above 4.2."
             ),
             priority="High (Immediate Action Required)",
-            expected_outcome="Goal: Reduce customer churn by 8-12% within 90 days and increase profit margins by 15%."
+            expected_outcome="Targeting an 8-12% reduction in churn within 90 days and a 15% increase in gross profit margin."
         )
 
     def generate_strategy(self, evidence_package: EvidencePackage) -> StrategicResponse:
