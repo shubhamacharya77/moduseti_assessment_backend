@@ -146,13 +146,44 @@ class StrategyEngine:
             )
             structured_llm = llm.with_structured_output(StrategicResponse)
 
-            prompt = (
-                f"{STRATEGY_ENGINE_SYSTEM_PROMPT}\n\n"
-                f"EXECUTIVE QUESTION: {evidence_package.question}\n\n"
-                f"EVIDENCE PACKAGE DATA:\n"
-                f"{evidence_package.model_dump_json(indent=2)}\n\n"
-                f"Analyze the evidence package data strictly and generate a StrategicResponse."
-            )
+            prompt = f"""
+{STRATEGY_ENGINE_SYSTEM_PROMPT}
+
+## Executive Question
+{evidence_package.question}
+
+## Grounded Evidence
+{evidence_package.model_dump_json(indent=2)}
+
+## Instructions
+
+Answer ONLY using the provided evidence.
+
+First determine the user's intent from the question.
+
+Respond according to these rules:
+
+1. If the user requests analytics, trends, metrics, or comparisons:
+   - Summarize the findings.
+   - Highlight notable patterns.
+   - Mention peaks, declines, anomalies, or changes.
+   - Do NOT provide recommendations unless requested.
+
+2. If the user requests strategy or improvements:
+   - Explain the current situation.
+   - Identify business issues supported by the evidence.
+   - Recommend practical actions.
+
+3. If the user requests information from company documents:
+   - Answer only from the retrieved document excerpts.
+   - Quote policies where appropriate.
+   - Do not infer information that is not present.
+
+Never invent facts.
+Never reference tools.
+Never mention missing data unless required.
+Generate the StrategicResponse and detailed explanation . 
+"""
 
             res = structured_llm.invoke(prompt)
             if isinstance(res, StrategicResponse):
