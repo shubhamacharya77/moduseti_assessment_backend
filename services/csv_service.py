@@ -579,6 +579,50 @@ def clean_and_process_customer_csv(
     return final_df, report
 
 
+def _calculate_customer_insights(
+    churn_rate_pct: float,
+    avg_rating: float,
+    churn_risk_counts: dict[str, int],
+    segment_breakdown: dict[str, dict[str, Any]],
+    region_breakdown: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Calculates deterministic customer health insights without LLM invocation."""
+    benchmark_status = "Within Target" if churn_rate_pct <= 5.0 else "Above Target"
+
+    if churn_rate_pct <= 5.0 and (avg_rating >= 4.5 or avg_rating == 0.0):
+        customer_health = "Excellent"
+    elif churn_rate_pct <= 15.0 and avg_rating >= 4.0:
+        customer_health = "Good"
+    elif churn_rate_pct <= 25.0 and avg_rating >= 3.5:
+        customer_health = "Fair"
+    else:
+        customer_health = "Poor"
+
+    highest_risk_tier = "Low"
+    if churn_risk_counts:
+        highest_risk_tier = str(max(churn_risk_counts, key=churn_risk_counts.get))
+
+    largest_customer_segment = "N/A"
+    if segment_breakdown:
+        largest_customer_segment = str(
+            max(segment_breakdown, key=lambda s: segment_breakdown[s].get("customers", 0))
+        )
+
+    highest_spending_region = "N/A"
+    if region_breakdown:
+        highest_spending_region = str(
+            max(region_breakdown, key=lambda r: region_breakdown[r].get("total_spend", 0.0))
+        )
+
+    return {
+        "benchmark_status": benchmark_status,
+        "customer_health": customer_health,
+        "highest_risk_tier": highest_risk_tier,
+        "largest_customer_segment": largest_customer_segment,
+        "highest_spending_region": highest_spending_region,
+    }
+
+
 def calculate_customer_metrics(df: pd.DataFrame) -> dict[str, Any]:
     """Calculates comprehensive quantitative customer KPIs over cleaned customer data.
 
@@ -603,6 +647,13 @@ def calculate_customer_metrics(df: pd.DataFrame) -> dict[str, Any]:
             "segment_breakdown": {},
             "region_breakdown": {},
             "loyalty_tier_breakdown": {},
+            "customer_insights": {
+                "benchmark_status": "Within Target",
+                "customer_health": "Good",
+                "highest_risk_tier": "Low",
+                "largest_customer_segment": "N/A",
+                "highest_spending_region": "N/A",
+            },
         }
 
     total_customers = int(len(df))
@@ -627,6 +678,14 @@ def calculate_customer_metrics(df: pd.DataFrame) -> dict[str, Any]:
 
     loyalty_breakdown = df["LoyaltyTier"].value_counts().to_dict()
 
+    customer_insights = _calculate_customer_insights(
+        churn_rate_pct=churn_rate_pct,
+        avg_rating=avg_rating,
+        churn_risk_counts=churn_risk_counts,
+        segment_breakdown=segment_breakdown,
+        region_breakdown=region_breakdown,
+    )
+
     return {
         "total_customers": total_customers,
         "active_customers": active_customers,
@@ -639,6 +698,7 @@ def calculate_customer_metrics(df: pd.DataFrame) -> dict[str, Any]:
         "segment_breakdown": segment_breakdown,
         "region_breakdown": region_breakdown,
         "loyalty_tier_breakdown": loyalty_breakdown,
+        "customer_insights": customer_insights,
     }
 
 
