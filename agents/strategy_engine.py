@@ -57,14 +57,13 @@ class StrategyEngine:
 
         # 2. PDF Document RAG Match Case
         if doc_chunks and (total_rev == 0 and total_cust == 0):
-            excerpt = doc_chunks[0][:300] + "..." if len(doc_chunks[0]) > 300 else doc_chunks[0]
+            combined_docs = "\n\n".join(doc_chunks)
             return StrategicResponse(
-                strategic_issues=[
-                    "Document analysis completed based on ingested corporate documentation."
-                ],
+                answer=f"Based on ingested company documentation:\n{combined_docs}",
+                strategic_issues=[],
                 evidence=citation_list,
                 business_impact="Document guidelines provide operational policy clarity for corporate execution.",
-                recommendation=f"Based on ingested company documentation: \"{excerpt}\"",
+                recommendation="",
                 priority="Medium",
                 expected_outcome="Align team operations with official corporate policy guidelines."
             )
@@ -212,8 +211,9 @@ class StrategyEngine:
 
 ## DIVIDED RESPONSE INSTRUCTIONS:
 1. `answer`: Direct factual natural language summary answering the question directly with exact figures (e.g. "Our overall profit margin percentage is 20.0% and average deal size is ₹75,213.11."). Format ALL currency using Indian Rupee `₹`.
+   - For PDF document / company policy queries: Synthesize a complete, professional natural language answer from the retrieved excerpts. NEVER truncate text mid-sentence or mid-word.
 2. `recommendation`: Actionable advice. If there is a genuine, valuable recommendation step, provide it here. IF THERE IS NOTHING MEANINGFUL TO RECOMMEND FOR THIS QUERY, RETURN AN EMPTY STRING `""`. DO NOT FORCE FAKE OR PREACHY ADVICE.
-3. `strategic_issues`: List of core operational risks or bottlenecks. IF NO ISSUES EXIST OR FOR PURE FACTUAL QUERIES, RETURN AN EMPTY ARRAY `[]`.
+3. `strategic_issues`: List of core operational risks or bottlenecks. FOR PDF DOCUMENT POLICY QUERIES OR FACTUAL METRIC QUERIES, RETURN AN EMPTY ARRAY `[]`.
 
 Generate the StrategicResponse strictly grounded in evidence.
 """
