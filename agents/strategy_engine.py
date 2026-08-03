@@ -79,22 +79,19 @@ class StrategyEngine:
         customer_insights = cust_details.get("customer_insights", {})
 
         issues = []
-        if customer_insights:
-            health = customer_insights.get("customer_health", "Good")
-            status = customer_insights.get("benchmark_status", "Within Target")
-            risk_tier = customer_insights.get("highest_risk_tier", "Low")
-            if status == "Above Target" or health in ["Fair", "Poor"]:
-                issues.append(f"Customer Health evaluated as {health} ({status}) with highest risk observed in {risk_tier} risk tier.")
-        elif churn_rate > 5.0:
-            issues.append(f"Customer Churn Rate of {churn_rate:.1f}% exceeds healthy benchmark threshold of 5.0%.")
+        # Include issues ONLY if asking for strategy/improvements or if severe risk exists
+        if any(k in q for k in ["strategy", "improve", "action", "recommend", "risk", "issue"]):
+            if customer_insights:
+                health = customer_insights.get("customer_health", "Good")
+                status = customer_insights.get("benchmark_status", "Within Target")
+                risk_tier = customer_insights.get("highest_risk_tier", "Low")
+                if status == "Above Target" or health in ["Fair", "Poor"]:
+                    issues.append(f"Customer Health evaluated as {health} ({status}) with highest risk observed in {risk_tier} risk tier.")
+            elif churn_rate > 5.0:
+                issues.append(f"Customer Churn Rate of {churn_rate:.1f}% exceeds healthy benchmark threshold of 5.0%.")
 
-        if profit_margin < 25.0 and profit_margin > 0:
-            issues.append(f"Gross Profit Margin of {profit_margin:.1f}% indicates margin expansion opportunity toward 25.0% target.")
-        if csat > 0 and csat < 4.2:
-            issues.append(f"Average Customer Rating of {csat:.2f}/5.0 indicates room for retention improvement.")
-
-        if not issues:
-            issues = ["Operational performance metrics ingested and verified across active datasets."]
+            if profit_margin < 25.0 and profit_margin > 0:
+                issues.append(f"Gross Profit Margin of {profit_margin:.1f}% indicates margin expansion opportunity toward 25.0% target.")
 
         # Formulate direct answer prioritizing trend_insights & customer_insights
         if trend_insights and any(k in q for k in ["trend", "month", "time", "history", "growth"]):
@@ -108,7 +105,7 @@ class StrategyEngine:
             dec_m = trend_insights.get("largest_decrease_month", "N/A")
 
             rec = (
-                f"Sales Trend Analysis (Source of Truth): Overall trend is {overall}. "
+                f"Sales Trend Analysis: Overall trend is {overall}. "
                 f"Peak revenue occurred in {high_m} (₹{high_r:,.2f}), lowest in {low_m} (₹{low_r:,.2f}). "
                 f"Average monthly revenue is ₹{avg_m:,.2f}. "
                 f"Largest single-month revenue increase was in {inc_m}, largest decrease in {dec_m}."
@@ -117,7 +114,28 @@ class StrategyEngine:
             regs = sales_details.get("regional_breakdown", {})
             summary = ", ".join([f"{k}: ₹{v:,.2f}" for k, v in regs.items()]) if regs else "No regional data"
             top_reg = customer_insights.get("highest_spending_region", "N/A") if customer_insights else "N/A"
-            rec = f"Regional sales revenue distribution: {summary}. Top spending region: {top_reg}."
+            rec = f"Regional sales revenue breakdown: {summary}. Top spending region is {top_reg}."
+        elif "segment" in q:
+            segs = sales_details.get("segment_breakdown", {}) or cust_details.get("segment_breakdown", {})
+            if isinstance(segs, dict):
+                summary_items = []
+                for k, v in segs.items():
+                    val = v.get("total_spend", v) if isinstance(v, dict) else v
+                    summary_items.append(f"{k}: ₹{val:,.2f}" if isinstance(val, (int, float)) else f"{k}: {val}")
+                summary = ", ".join(summary_items)
+            else:
+                summary = "No segment data"
+            top_seg = customer_insights.get("largest_customer_segment", "N/A") if customer_insights else "N/A"
+            rec = f"Customer segment spend breakdown: {summary}. Largest customer segment is {top_seg}."
+        elif "loyalty" in q or "tier" in q or "platinum" in q or "gold" in q or "silver" in q:
+            tiers = cust_details.get("loyalty_tier_breakdown", {})
+            summary = ", ".join([f"{k}: {v:,} accounts" for k, v in tiers.items()]) if tiers else "No loyalty tier data"
+            rec = f"Loyalty tier account distribution: {summary}."
+        elif "csat" in q or "rating" in q or "satisfaction" in q or "feedback" in q:
+            rec = f"Our average customer satisfaction rating is {csat:.2f} out of 5.0 across {total_cust:,} total customer accounts."
+        elif "deal" in q or "margin" in q:
+            deal_size = sales_details.get("average_deal_size", 0.0)
+            rec = f"Our overall profit margin percentage is {profit_margin:.1f}% and the average deal size is ₹{deal_size:,.2f}."
         elif "category" in q or "product" in q:
             cats = sales_details.get("category_breakdown", {})
             summary = ", ".join([f"{k}: ₹{v:,.2f}" for k, v in cats.items()]) if cats else "No category data"
@@ -126,7 +144,7 @@ class StrategyEngine:
             c_health = customer_insights.get("customer_health", "Good") if customer_insights else "N/A"
             b_status = customer_insights.get("benchmark_status", "Within Target") if customer_insights else "N/A"
             rec = (
-                f"Ingested metrics analysis: Total Revenue is ₹{total_rev:,.2f} across {total_cust:,} customers. "
+                f"Ingested metrics summary: Total Revenue is ₹{total_rev:,.2f} across {total_cust:,} customers. "
                 f"Customer health status is {c_health} ({b_status}) with a churn rate of {churn_rate:.1f}%."
             )
 
@@ -169,7 +187,7 @@ class StrategyEngine:
             llm = ChatGroq(
                 model_name=self.model_name,
                 groq_api_key=self.api_key,
-                temperature=0.2,
+                temperature=0.1,
             )
             structured_llm = llm.with_structured_output(StrategicResponse)
 
@@ -182,35 +200,18 @@ class StrategyEngine:
 ## Grounded Evidence Payload
 {evidence_package.model_dump_json(indent=2)}
 
-## CRITICAL INSTRUCTION: SOURCE OF TRUTH PRIORITIZATION
-1. If `trend_insights` exists in `sales_details`:
-   - Treat `trend_insights` as the ABSOLUTE SOURCE OF TRUTH for all revenue trend analysis.
-   - Summarize its exact fields (`highest_month`, `highest_revenue`, `lowest_month`, `lowest_revenue`, `average_monthly_revenue`, `overall_trend`, `largest_increase_month`, `largest_decrease_month`).
-   - Do NOT re-infer or recalculate trends from raw `monthly_revenue_trends`.
-   - Do NOT ask the user to analyze the data.
-   - Do NOT speculate or invent ungrounded trend explanations.
+## MANDATORY RULES:
+1. CURRENCY FORMATTING: Format ALL currency figures using the Indian Rupee symbol `₹` (e.g. ₹75,213.11). NEVER use Dollar `$`.
+2. DIRECT FACTUAL ANSWERS:
+   - For analytics, metric, or breakdown queries, directly state the numbers in 1-2 complete sentences.
+   - NEVER start responses with meta-instructions like "Analyze X to...".
+   - NEVER reference code variable names (e.g. "segment_breakdown").
+   - NEVER cite internal tool titles in the text (e.g. "...as per Executive Sales Performance Summary").
+   - NEVER offer unrequested action advice (e.g. "We should focus on...") unless explicitly requested.
+3. STRATEGIC ISSUES BADGE:
+   - For pure analytics/metrics queries, return `strategic_issues: []` (empty array) so no warning badge renders.
+   - Include `strategic_issues` ONLY if the user specifically asked for strategy/improvements or if critical risks exist.
 
-2. If `customer_insights` exists in `customer_details`:
-   - Treat `customer_insights` as the ABSOLUTE SOURCE OF TRUTH for customer health.
-   - Directly incorporate `benchmark_status`, `customer_health`, `highest_risk_tier`, `largest_customer_segment`, and `highest_spending_region` into the response.
-
-## General Response Guidelines:
-- If user requests analytics, trends, or metrics:
-  * Summarize findings using `trend_insights` / `customer_insights`.
-  * Do NOT provide recommendations unless explicitly requested.
-
-- If user requests strategy or improvements:
-  * Explain current situation using `trend_insights` / `customer_insights`.
-  * Identify business issues supported by the evidence.
-  * Recommend practical actions.
-
-- If user requests company document info:
-  * Answer strictly from retrieved document excerpts.
-  * Quote policies where appropriate.
-
-Never invent facts.
-Never reference internal tool names.
-Never mention missing data unless required.
 Generate the StrategicResponse strictly grounded in evidence.
 """
 

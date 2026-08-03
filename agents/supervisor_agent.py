@@ -72,20 +72,42 @@ class SupervisorAgent:
                 }
 
         # 5. Customer Segment breakdown (Pie)
-        if any(k in q for k in ["segment", "customer segment", "enterprise", "smb"]):
-            segs = customer_details.get("segment_breakdown", {})
+        if any(k in q for k in ["segment", "customer segment", "enterprise", "smb", "mid-market", "retail", "wholesale", "online"]):
+            segs = customer_details.get("segment_breakdown", {}) or sales_details.get("segment_breakdown", {})
             if segs:
                 formatted = []
                 for k, v in segs.items():
-                    val = v.get("total_spend", 0) if isinstance(v, dict) else v
+                    val = v.get("total_spend", v) if isinstance(v, dict) else v
                     formatted.append({"label": k, "value": val})
                 return {
                     "chart_type": "pie",
-                    "title": "Customer Segment Spend Share",
+                    "title": "Customer Segment Revenue & Spend Share",
                     "data": formatted,
                 }
 
-        # 6. Product breakdown (Bar)
+        # 6. Loyalty Tier breakdown (Bar)
+        if any(k in q for k in ["loyalty", "tier", "platinum", "gold", "silver"]):
+            tiers = customer_details.get("loyalty_tier_breakdown", {})
+            if tiers:
+                return {
+                    "chart_type": "bar",
+                    "title": "Account Distribution Across Loyalty Tiers",
+                    "data": [{"label": k, "value": v} for k, v in tiers.items()],
+                }
+
+        # 7. Customer Satisfaction & Rating (Bar)
+        if any(k in q for k in ["csat", "rating", "satisfaction", "feedback", "score"]):
+            avg_r = customer_details.get("avg_customer_rating", 0.0) or sales_details.get("average_customer_rating", 0.0)
+            return {
+                "chart_type": "bar",
+                "title": "Customer Satisfaction Rating vs Target Benchmark",
+                "data": [
+                    {"label": "Current CSAT", "value": avg_r},
+                    {"label": "Target Benchmark", "value": 4.5},
+                ],
+            }
+
+        # 8. Product breakdown (Bar)
         if any(k in q for k in ["product", "sku", "item", "top selling"]):
             prods = sales_details.get("product_breakdown", {})
             if prods:
