@@ -70,7 +70,6 @@ class StrategyEngine:
 
         # 3. Quantitative Sales & Customer Data Match Case
         profit_margin = sales_details.get("profit_margin_pct", 0)
-        total_profit = sales_details.get("total_profit", 0)
         churn_rate = cust_details.get("churn_rate_pct", 0)
         csat = cust_details.get("avg_customer_rating", 0)
 
