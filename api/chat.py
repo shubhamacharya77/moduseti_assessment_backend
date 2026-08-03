@@ -35,11 +35,15 @@ async def ask_executive_chat(
         strat_resp = result.get("strategic_response", {})
         chart_data = result.get("chart_data")
 
+        resp_answer = strat_resp.get("answer") or strat_resp.get("recommendation", "")
+        resp_recommendation = strat_resp.get("recommendation", "") if strat_resp.get("answer") else ""
+
         return {
             "status": "success",
             "message": "Grounded executive chat answer generated successfully.",
             "user_query": query_text,
-            "answer": strat_resp.get("recommendation", "No specific recommendation generated."),
+            "answer": resp_answer,
+            "recommendation": resp_recommendation,
             "strategic_issues": strat_resp.get("strategic_issues", []),
             "business_impact": strat_resp.get("business_impact", ""),
             "priority": strat_resp.get("priority", "Medium"),

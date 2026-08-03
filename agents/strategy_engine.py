@@ -94,6 +94,15 @@ class StrategyEngine:
                 issues.append(f"Gross Profit Margin of {profit_margin:.1f}% indicates margin expansion opportunity toward 25.0% target.")
 
         # Formulate direct answer prioritizing trend_insights & customer_insights
+        recommendation_step = ""
+        if any(k in q for k in ["strategy", "improve", "action", "recommend", "how can we"]):
+            if profit_margin < 25.0 and profit_margin > 0:
+                recommendation_step = "Focus sales rep incentives on high-margin product categories to expand gross margin toward 25.0% target."
+            elif churn_rate > 5.0:
+                recommendation_step = "Deploy proactive customer success interventions for High risk tier accounts to lower annual churn rate."
+            else:
+                recommendation_step = "Optimize regional distribution channels to accelerate market penetration in top-performing regions."
+
         if trend_insights and any(k in q for k in ["trend", "month", "time", "history", "growth"]):
             high_m = trend_insights.get("highest_month", "N/A")
             high_r = trend_insights.get("highest_revenue", 0.0)
@@ -104,7 +113,7 @@ class StrategyEngine:
             inc_m = trend_insights.get("largest_increase_month", "N/A")
             dec_m = trend_insights.get("largest_decrease_month", "N/A")
 
-            rec = (
+            ans = (
                 f"Sales Trend Analysis: Overall trend is {overall}. "
                 f"Peak revenue occurred in {high_m} (₹{high_r:,.2f}), lowest in {low_m} (₹{low_r:,.2f}). "
                 f"Average monthly revenue is ₹{avg_m:,.2f}. "
@@ -114,7 +123,7 @@ class StrategyEngine:
             regs = sales_details.get("regional_breakdown", {})
             summary = ", ".join([f"{k}: ₹{v:,.2f}" for k, v in regs.items()]) if regs else "No regional data"
             top_reg = customer_insights.get("highest_spending_region", "N/A") if customer_insights else "N/A"
-            rec = f"Regional sales revenue breakdown: {summary}. Top spending region is {top_reg}."
+            ans = f"Regional sales revenue breakdown: {summary}. Top spending region is {top_reg}."
         elif "segment" in q:
             segs = sales_details.get("segment_breakdown", {}) or cust_details.get("segment_breakdown", {})
             if isinstance(segs, dict):
@@ -126,33 +135,34 @@ class StrategyEngine:
             else:
                 summary = "No segment data"
             top_seg = customer_insights.get("largest_customer_segment", "N/A") if customer_insights else "N/A"
-            rec = f"Customer segment spend breakdown: {summary}. Largest customer segment is {top_seg}."
+            ans = f"Customer segment spend breakdown: {summary}. Largest customer segment is {top_seg}."
         elif "loyalty" in q or "tier" in q or "platinum" in q or "gold" in q or "silver" in q:
             tiers = cust_details.get("loyalty_tier_breakdown", {})
             summary = ", ".join([f"{k}: {v:,} accounts" for k, v in tiers.items()]) if tiers else "No loyalty tier data"
-            rec = f"Loyalty tier account distribution: {summary}."
+            ans = f"Loyalty tier account distribution: {summary}."
         elif "csat" in q or "rating" in q or "satisfaction" in q or "feedback" in q:
-            rec = f"Our average customer satisfaction rating is {csat:.2f} out of 5.0 across {total_cust:,} total customer accounts."
+            ans = f"Our average customer satisfaction rating is {csat:.2f} out of 5.0 across {total_cust:,} total customer accounts."
         elif "deal" in q or "margin" in q:
             deal_size = sales_details.get("average_deal_size", 0.0)
-            rec = f"Our overall profit margin percentage is {profit_margin:.1f}% and the average deal size is ₹{deal_size:,.2f}."
+            ans = f"Our overall profit margin percentage is {profit_margin:.1f}% and the average deal size is ₹{deal_size:,.2f}."
         elif "category" in q or "product" in q:
             cats = sales_details.get("category_breakdown", {})
             summary = ", ".join([f"{k}: ₹{v:,.2f}" for k, v in cats.items()]) if cats else "No category data"
-            rec = f"Product category revenue breakdown: {summary}."
+            ans = f"Product category revenue breakdown: {summary}."
         else:
             c_health = customer_insights.get("customer_health", "Good") if customer_insights else "N/A"
             b_status = customer_insights.get("benchmark_status", "Within Target") if customer_insights else "N/A"
-            rec = (
+            ans = (
                 f"Ingested metrics summary: Total Revenue is ₹{total_rev:,.2f} across {total_cust:,} customers. "
                 f"Customer health status is {c_health} ({b_status}) with a churn rate of {churn_rate:.1f}%."
             )
 
         return StrategicResponse(
+            answer=ans,
             strategic_issues=issues,
             evidence=citation_list,
             business_impact="Optimizing retention and sales efficiency protects recurring revenue.",
-            recommendation=rec,
+            recommendation=recommendation_step,
             priority="High (Immediate Action Required)" if churn_rate > 15 else "Medium",
             expected_outcome="Drive evidence-grounded operational growth and churn reduction."
         )
@@ -200,23 +210,20 @@ class StrategyEngine:
 ## Grounded Evidence Payload
 {evidence_package.model_dump_json(indent=2)}
 
-## MANDATORY RULES:
-1. CURRENCY FORMATTING: Format ALL currency figures using the Indian Rupee symbol `₹` (e.g. ₹75,213.11). NEVER use Dollar `$`.
-2. DIRECT FACTUAL ANSWERS:
-   - For analytics, metric, or breakdown queries, directly state the numbers in 1-2 complete sentences.
-   - NEVER start responses with meta-instructions like "Analyze X to...".
-   - NEVER reference code variable names (e.g. "segment_breakdown").
-   - NEVER cite internal tool titles in the text (e.g. "...as per Executive Sales Performance Summary").
-   - NEVER offer unrequested action advice (e.g. "We should focus on...") unless explicitly requested.
-3. STRATEGIC ISSUES BADGE:
-   - For pure analytics/metrics queries, return `strategic_issues: []` (empty array) so no warning badge renders.
-   - Include `strategic_issues` ONLY if the user specifically asked for strategy/improvements or if critical risks exist.
+## DIVIDED RESPONSE INSTRUCTIONS:
+1. `answer`: Direct factual natural language summary answering the question directly with exact figures (e.g. "Our overall profit margin percentage is 20.0% and average deal size is ₹75,213.11."). Format ALL currency using Indian Rupee `₹`.
+2. `recommendation`: Actionable advice. If there is a genuine, valuable recommendation step, provide it here. IF THERE IS NOTHING MEANINGFUL TO RECOMMEND FOR THIS QUERY, RETURN AN EMPTY STRING `""`. DO NOT FORCE FAKE OR PREACHY ADVICE.
+3. `strategic_issues`: List of core operational risks or bottlenecks. IF NO ISSUES EXIST OR FOR PURE FACTUAL QUERIES, RETURN AN EMPTY ARRAY `[]`.
 
 Generate the StrategicResponse strictly grounded in evidence.
 """
 
             res = structured_llm.invoke(prompt)
             if isinstance(res, StrategicResponse):
+                # Ensure answer fallback if LLM populated recommendation into answer
+                if not res.answer and res.recommendation:
+                    res.answer = res.recommendation
+                    res.recommendation = ""
                 return res
             return self._generate_data_driven_response(evidence_package)
         except Exception:
