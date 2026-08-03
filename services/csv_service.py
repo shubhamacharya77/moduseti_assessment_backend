@@ -198,6 +198,87 @@ def clean_and_process_sales_csv(
     return final_df, report
 
 
+def _calculate_trend_insights(monthly_revenue_trends: dict[str, float]) -> dict[str, Any]:
+    """Calculates deterministic sales trend insights from monthly revenue trends dictionary."""
+    if not monthly_revenue_trends:
+        return {
+            "highest_month": "N/A",
+            "highest_revenue": 0.0,
+            "lowest_month": "N/A",
+            "lowest_revenue": 0.0,
+            "average_monthly_revenue": 0.0,
+            "overall_trend": "Stable",
+            "largest_increase_month": "N/A",
+            "largest_decrease_month": "N/A",
+        }
+
+    sorted_months = sorted(monthly_revenue_trends.keys())
+    values = [float(monthly_revenue_trends[m]) for m in sorted_months]
+
+    highest_month = max(monthly_revenue_trends, key=monthly_revenue_trends.get)
+    highest_revenue = round(float(monthly_revenue_trends[highest_month]), 2)
+
+    lowest_month = min(monthly_revenue_trends, key=monthly_revenue_trends.get)
+    lowest_revenue = round(float(monthly_revenue_trends[lowest_month]), 2)
+
+    avg_revenue = round(sum(values) / len(values), 2) if values else 0.0
+
+    # Calculate MoM deltas
+    largest_inc_val = 0.0
+    largest_inc_month = "N/A"
+    largest_dec_val = 0.0
+    largest_dec_month = "N/A"
+
+    inc_count = 0
+    dec_count = 0
+
+    for i in range(1, len(sorted_months)):
+        curr_m = sorted_months[i]
+        delta = values[i] - values[i - 1]
+
+        if delta > 0:
+            inc_count += 1
+            if delta > largest_inc_val:
+                largest_inc_val = delta
+                largest_inc_month = curr_m
+        elif delta < 0:
+            dec_count += 1
+            if delta < largest_dec_val:
+                largest_dec_val = delta
+                largest_dec_month = curr_m
+
+    # Determine overall_trend
+    if len(values) <= 1:
+        overall_trend = "Stable"
+    else:
+        max_possible = len(sorted_months) - 1
+        net_change = values[-1] - values[0]
+
+        if inc_count == max_possible:
+            overall_trend = "Increasing"
+        elif dec_count == max_possible:
+            overall_trend = "Decreasing"
+        elif inc_count > 0 and dec_count > 0:
+            overall_trend = "Fluctuating"
+        elif net_change > 0:
+            overall_trend = "Increasing"
+        elif net_change < 0:
+            overall_trend = "Decreasing"
+        else:
+            overall_trend = "Stable"
+
+    return {
+        "highest_month": highest_month,
+        "highest_revenue": highest_revenue,
+        "lowest_month": lowest_month,
+        "lowest_revenue": lowest_revenue,
+        "average_monthly_revenue": avg_revenue,
+        "overall_trend": overall_trend,
+        "largest_increase_month": largest_inc_month,
+        "largest_decrease_month": largest_dec_month,
+    }
+
+
 def calculate_sales_metrics(df: pd.DataFrame) -> dict[str, Any]:
     """Calculates comprehensive quantitative sales KPIs over cleaned sales transactions."""
     if df.empty:
@@ -217,6 +298,16 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict[str, Any]:
             "top_category": "None",
             "top_region": "None",
             "monthly_revenue_trends": {},
+            "trend_insights": {
+                "highest_month": "N/A",
+                "highest_revenue": 0.0,
+                "lowest_month": "N/A",
+                "lowest_revenue": 0.0,
+                "average_monthly_revenue": 0.0,
+                "overall_trend": "Stable",
+                "largest_increase_month": "N/A",
+                "largest_decrease_month": "N/A",
+            },
         }
 
     total_revenue = float(df["Revenue"].sum())
@@ -247,6 +338,8 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict[str, Any]:
     monthly_series = temp_df.groupby("YearMonth")["Revenue"].sum().round(2)
     monthly_revenue_trends = monthly_series.to_dict()
 
+    trend_insights = _calculate_trend_insights(monthly_revenue_trends)
+
     return {
         "total_revenue": round(total_revenue, 2),
         "total_profit": round(total_profit, 2),
@@ -263,6 +356,7 @@ def calculate_sales_metrics(df: pd.DataFrame) -> dict[str, Any]:
         "top_category": top_category,
         "top_region": top_region,
         "monthly_revenue_trends": monthly_revenue_trends,
+        "trend_insights": trend_insights,
     }
 
 
